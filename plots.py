@@ -111,28 +111,6 @@ def plot_research_topic(df: pd.DataFrame) -> None:
     pie_counts = broad_counts
     pie_colors = [color_for_category(cat) for cat in pie_counts.index]
 
-    fig1, ax1 = plt.subplots(figsize=(6.8, 4.8), dpi=300)
-    wedges, texts, autotexts = ax1.pie(
-        pie_counts.values,
-        labels=pie_counts.index,
-        colors=pie_colors,
-        startangle=105,
-        autopct=lambda p: f"{p:.1f}%" if p >= 4 else "",
-        pctdistance=0.78,
-        labeldistance=1.04,
-        wedgeprops={"linewidth": 0.8, "edgecolor": "white"},
-        textprops={"color": "#2A2A2A", "fontsize": 5.5},
-    )
-    for wedge, t in zip(wedges, autotexts):
-        r, g, b, _ = wedge.get_facecolor()
-        luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
-        t.set_color("white" if luminance < 0.52 else "#3A3A3A")
-        t.set_fontsize(5.5)
-    ax1.set_title("Research Object Distribution", loc="left", pad=8, color="#1F1F1F")
-    plt.tight_layout()
-    export_figure(fig1, "research_object_distribution")
-    plt.close(fig1)
-
     fig2, ax2 = plt.subplots(figsize=(6.8, 4.8), dpi=300)
     wedges, texts, autotexts = ax2.pie(
         pie_counts.values,
@@ -151,16 +129,6 @@ def plot_research_topic(df: pd.DataFrame) -> None:
         t.set_color("white" if luminance < 0.52 else "#3A3A3A")
         t.set_fontsize(5.5)
     ax2.set_title("Research Topic Distribution", loc="left", pad=8, color="#1F1F1F")
-    ax2.text(
-        0.5,
-        -0.08,
-        f"N = {bar_total}",
-        transform=ax2.transAxes,
-        ha="center",
-        va="top",
-        fontsize=8,
-        color="#555555",
-    )
     fig2.tight_layout()
     export_figure(fig2, "fig3b_research_topic_distribution")
     plt.close(fig2)
