@@ -279,30 +279,34 @@ def plot_paradigm_by_research_object(df: pd.DataFrame) -> None:
 
     count_table = pd.DataFrame(
         {
-            "Stationary lab": summary["stationary"],
+            "Stationary": summary["stationary"],
             "HMD/VR": summary["hmd"],
             "Mobile": summary["mobile"],
+            "NA": (
+                summary["total"] - (summary["stationary"] + summary["hmd"] + summary["mobile"])
+            ).clip(lower=0),
         }
     )
-    count_table["Other/NA"] = (
+    count_table["NA"] = (
         summary["total"] - (summary["stationary"] + summary["hmd"] + summary["mobile"])
     ).clip(lower=0)
 
     set_plot_style()
 
     colors = {
-        "Stationary lab": "#0B3C5D",
+        "Stationary": "#0B3C5D",
         "HMD/VR": "#2A9D8F",
         "Mobile": "#A8E6CF",
-        "Other/NA": "#D7DEE3",
+        "NA": "#D7DEE3",
     }
 
     fig, ax = plt.subplots(figsize=(8.0, 5.0), dpi=300)
     left = np.zeros(len(count_table))
     y_labels = count_table.index.tolist()
     totals = summary["total"].to_numpy()
+    percentage_labels = []
 
-    for column in ["Stationary lab", "HMD/VR", "Mobile", "Other/NA"]:
+    for column in ["Stationary", "HMD/VR", "Mobile", "NA"]:
         values = count_table[column].to_numpy()
         bars = ax.barh(
             y_labels, values, left=left, color=colors[column], height=0.62, label=column
@@ -310,7 +314,7 @@ def plot_paradigm_by_research_object(df: pd.DataFrame) -> None:
         for bar, value, total in zip(bars, values, totals):
             pct_value = (value / total * 100) if total > 0 else 0
             if pct_value >= 9:
-                ax.text(
+                label = ax.text(
                     bar.get_x() + bar.get_width() / 2,
                     bar.get_y() + bar.get_height() / 2,
                     f"{pct_value:.1f}%",
@@ -318,9 +322,10 @@ def plot_paradigm_by_research_object(df: pd.DataFrame) -> None:
                     va="center",
                     fontsize=8,
                     color="white"
-                    if column in {"Stationary lab", "HMD/VR"}
+                    if column in {"Stationary", "HMD/VR"}
                     else "#1F1F1F",
                 )
+                percentage_labels.append((label, bar))
         left += values
 
     ax.grid(axis="x", color="#D9D7D0", linestyle="-", linewidth=0.6, alpha=0.55)
@@ -349,8 +354,16 @@ def plot_paradigm_by_research_object(df: pd.DataFrame) -> None:
             color="#555555",
         )
 
-    ax.legend(frameon=False, loc="lower right", ncol=2)
     fig.tight_layout()
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+    for label, bar in percentage_labels:
+        label_width = label.get_window_extent(renderer).width
+        bar_width = bar.get_window_extent(renderer).width
+        if label_width + 4 > bar_width:
+            label.remove()
+
+    ax.legend(frameon=False, loc="upper right", ncol=2)
     export_figure(fig, "fig3c_paradigm_by_research_object")
     plt.close(fig)
 
@@ -379,9 +392,9 @@ def plot_study_design_by_research_object(df: pd.DataFrame) -> None:
 
         design_code = pd.to_numeric(row.get("lab_realworld_binary"), errors="coerce")
         if pd.notna(design_code):
-            design_label = design_map.get(int(design_code), "Other/NA")
+            design_label = design_map.get(int(design_code), "NA")
         else:
-            design_label = "Other/NA"
+            design_label = "NA"
 
         for topic in mapped_topics:
             rows.append({"topic": topic, "design": design_label})
@@ -418,7 +431,7 @@ def plot_study_design_by_research_object(df: pd.DataFrame) -> None:
             "Combined lab+field": summary["combined"],
         }
     )
-    count_table["Other/NA"] = (
+    count_table["NA"] = (
         summary["total"]
         - (summary["lab"] + summary["real_world"] + summary["combined"])
     ).clip(lower=0)
@@ -429,7 +442,7 @@ def plot_study_design_by_research_object(df: pd.DataFrame) -> None:
         "Lab": "#0B3C5D",
         "Real-world": "#2A9D8F",
         "Combined lab+field": "#A8E6CF",
-        "Other/NA": "#D7DEE3",
+        "NA": "#D7DEE3",
     }
 
     fig, ax = plt.subplots(figsize=(8.0, 5.0), dpi=300)
@@ -437,7 +450,7 @@ def plot_study_design_by_research_object(df: pd.DataFrame) -> None:
     y_labels = count_table.index.tolist()
     totals = summary["total"].to_numpy()
 
-    for column in ["Lab", "Real-world", "Combined lab+field", "Other/NA"]:
+    for column in ["Lab", "Real-world", "Combined lab+field", "NA"]:
         values = count_table[column].to_numpy()
         bars = ax.barh(
             y_labels, values, left=left, color=colors[column], height=0.62, label=column
