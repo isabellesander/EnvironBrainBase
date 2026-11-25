@@ -1155,7 +1155,7 @@ def plot_mean_age(df: pd.DataFrame) -> None:
     ax.set_ylim(0, 120)
 
     fig.tight_layout()
-    export_figure(fig, "fig1b_mean_age_participants_distribution")
+    export_figure(fig, "fig2b_mean_age_participants_distribution")
     plt.close(fig)
 
 
@@ -1279,7 +1279,7 @@ def plot_age_ranges(df: pd.DataFrame) -> None:
     ]
     ax.legend(handles=legend_handles, frameon=True, loc="upper right", fontsize=7)
     fig.tight_layout()
-    export_figure(fig, "fig1c_age_ranges_distribution")
+    export_figure(fig, "fig2c_age_ranges_distribution")
     plt.close(fig)
 
 
@@ -1476,7 +1476,7 @@ def plot_publication_year(df: pd.DataFrame) -> None:
 
     add_break_marks(ax_l, "right")
     fig.subplots_adjust(left=0.07, right=0.98, bottom=0.13, top=0.90, wspace=0.04)
-    export_figure(fig, "fig1a_publication_year_distribution")
+    export_figure(fig, "fig2a_publication_year_distribution")
     plt.close(fig)
 
 
@@ -1531,7 +1531,7 @@ def plot_sex_split(df: pd.DataFrame) -> None:
     ax.tick_params(axis="y", colors="#555555", length=0)
 
     fig.tight_layout()
-    export_figure(fig, "fig1d_sex_split_distribution")
+    export_figure(fig, "fig2d_sex_split_distribution")
     plt.close(fig)
 
 
