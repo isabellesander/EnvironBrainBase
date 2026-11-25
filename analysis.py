@@ -56,27 +56,21 @@ from plots import (
 # --- Replicability criteria (raw CSV column names) ---
 NECESSARY_COLS: dict[str, str] = {
     "SR_in_Hz": "Sample rate",
-    # "filters_amp":         "Hardware filter settings", -> redundant with online_filters
-    "online_filters": "Online filters applied",
+    "online_filters": "Hardware filter settings",
+    "offline_filters": "Offline filters applied",
     "num_channels": "Number of channels",
-    "electrode_type": "Electrode type",
     "electrode_locations": "Electrode locations",
     "reference": "Reference scheme",
     "artifact_rejection": "Artifact rejection",
-    # offline filter handled separately as either/or (see offline_filter_present)
-}
-OFFLINE_COLS = {
-    "flag": "offline_filters",
-    "highpass": "Offline_High-Pass_(Hz)",
-    "lowpass": "Offline_Low-Pass_(Hz)",
 }
 GOOD_COLS: dict[str, str] = {
     "channel_interpolation": "Channel interpolation",
     "Impedance": "Impedance",
     "EEG_company": "EEG company",
     "EEG_system": "EEG system",
+    "electrode_type": "Electrode type",
 }
-N_MAX = len(NECESSARY_COLS) + 1  # 9 (8 simple + 1 offline either/or)
+N_MAX = len(NECESSARY_COLS)  # 9
 
 ABSENT: frozenset[str] = frozenset(
     {
@@ -91,6 +85,7 @@ ABSENT: frozenset[str] = frozenset(
         "0.0",
         "na / na",
         "na/na",
+        "na-na",
         "not reported",
         "not available",
         "not applicable",
@@ -106,40 +101,6 @@ FEAT_LABELS = {
     "9": "Proprietary",
 }
 
-# --- Consumer vs research-grade EEG companies ---
-CONSUMER_COMPANIES = {
-    "emotiv",
-    "neurosky",
-    "muse",
-    "interaxon",
-    "kingfar",
-    "ergolab",
-    "openbci",
-    "neurosity",
-    "brainlink",
-    "mindmedia",
-    "mindo",
-}
-RESEARCH_COMPANIES = {
-    "brain products",
-    "brainproducts",
-    "compumedics",
-    "neuroscan",
-    "biosemi",
-    "ant neuro",
-    "g.tec",
-    "gtec",
-    "egi",
-    "electrical geodesics",
-    "nihon kohden",
-    "natus",
-    "biopac",
-    "mitsar",
-    "micromed",
-    "xltek",
-    "noldus",
-    "acticap",
-}
 
 # Western countries (for geographic analysis)
 WESTERN = {
@@ -192,19 +153,9 @@ def is_present(val: object) -> bool:
     return str(val).strip().lower() not in ABSENT
 
 
-def offline_filter_present(row: pd.Series) -> bool:
-    """Satisfied if offline_filters is present OR both HP+LP cutoffs are present."""
-    if is_present(row.get(OFFLINE_COLS["flag"], "")):
-        return True
-    return is_present(row.get(OFFLINE_COLS["highpass"], "")) and is_present(
-        row.get(OFFLINE_COLS["lowpass"], "")
-    )
-
-
 def score_row(row: pd.Series) -> dict:
     # Prefix with "rep_" to avoid colliding with original CSV columns
     flags = {f"rep_{col}": is_present(row.get(col, "")) for col in NECESSARY_COLS}
-    flags["rep_offline_filter"] = offline_filter_present(row)
     good = {f"good_{col}": is_present(row.get(col, "")) for col in GOOD_COLS}
     n = sum(flags.values())
     g = sum(good.values())
@@ -268,23 +219,12 @@ def section_study_design(df: pd.DataFrame) -> None:
         .eq("stat - hmd")
         .sum()
     )
-    lab_incl_hmd = lab + hmd  # VR/HMD counted as lab
-    print(f"  Lab (incl. HMD/VR): {pct(lab_incl_hmd, total)}")
-    print(f"    of which HMD/VR:  {pct(hmd, total)}")
-    combined = df["lab_realworld_binary"].eq(3).sum()
-    hmd = (
-        df["EEG_system_mobile_stationary"]
-        .str.lower()
-        .str.strip()
-        .eq("stat - hmd")
-        .sum()
-    )
-    # lab_incl_hmd = lab + hmd  # VR/HMD counted as lab -> already included in lab count
+    
     print(f"  Lab (incl. HMD/VR): {pct(lab, total)}")
     print(f"    of which HMD/VR:  {pct(hmd, lab)}")
-    print(f"  Real-world (mobile): {pct(realworld, total)}")
-    print(f"  Combined lab+field:  {pct(combined, total)}")
-    
+    print(f"  Real-world:         {pct(realworld, total)}")
+    print(f"  Combined lab+field: {pct(combined, total)}")
+
     # -------------------------------------------------------------------------------------
     lab_and_mobile = (
         df["lab_realworld_binary"].eq(1)
@@ -367,14 +307,14 @@ def section_replicability(df: pd.DataFrame) -> pd.DataFrame:
     print(f"  Mean criteria met:   {df['n_necessary'].mean():.2f} / {N_MAX}")
 
     sep("  Per-criterion reporting rates (sorted low → high)")
-    rates: list[tuple[str, float]] = []
+    rates: list[tuple[str, float, int]] = []
     for col, label in NECESSARY_COLS.items():
-        rates.append((label, df[f"rep_{col}"].mean()))
-    rates.append(("Offline filter (either/or)", df["rep_offline_filter"].mean()))
+        col_bool = df[f"rep_{col}"]
+        rates.append((label, col_bool.mean(), int(col_bool.sum())))
     rates.sort(key=lambda x: x[1])
-    for label, rate in rates:
+    for label, rate, n_reported in rates:
         bar = "#" * round(rate * 30)
-        print(f"  {label:<35} {100 * rate:5.1f}%  {bar}")
+        print(f"  {label:<35} {100 * rate:5.1f}%  ({n_reported}/{total})  {bar}")
 
     sep("  Good-to-have reporting rates")
     for col, label in GOOD_COLS.items():

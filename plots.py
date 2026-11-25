@@ -16,9 +16,8 @@ from scipy import stats
 # Replicability labels used by reporting-rate plots.
 NECESSARY_COLS: dict[str, str] = {
     "SR_in_Hz": "Sample rate",
-    "online_filters": "Online filters applied",
+    "offline_filters": "Offline filters applied",
     "num_channels": "Number of channels",
-    "electrode_type": "Electrode type",
     "electrode_locations": "Electrode locations",
     "reference": "Reference scheme",
     "artifact_rejection": "Artifact rejection",
@@ -1506,7 +1505,6 @@ def plot_replicability_criteria(df: pd.DataFrame) -> None:
     required_rates: list[tuple[str, float]] = []
     for col, label in NECESSARY_COLS.items():
         required_rates.append((label, df[f"rep_{col}"].mean()))
-    required_rates.append(("Offline filters", df["rep_offline_filter"].mean()))
     required_rates.sort(key=lambda item: item[1])
 
     if not required_rates:
