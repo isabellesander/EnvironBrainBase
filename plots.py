@@ -133,47 +133,33 @@ def plot_research_topic(df: pd.DataFrame) -> None:
     export_figure(fig1, "research_object_distribution")
     plt.close(fig1)
 
-    bar_counts = broad_counts.sort_values()
-    bar_colors = [color_for_category(cat) for cat in bar_counts.index]
-
-    fig2, ax2 = plt.subplots(figsize=(7.0, 4.9), dpi=300)
-    bars = ax2.barh(bar_counts.index, bar_counts.values, color=bar_colors, height=0.62)
-    ax2.grid(axis="x", color="#D9D7D0", linestyle="-", linewidth=0.6, alpha=0.55)
-    ax2.set_axisbelow(True)
-    for spine in ["top", "right", "left", "bottom"]:
-        ax2.spines[spine].set_visible(False)
-    ax2.set_title(
-        "Environmental Focus Distribution", pad=8, loc="left", color="#1F1F1F"
+    fig2, ax2 = plt.subplots(figsize=(6.8, 4.8), dpi=300)
+    wedges, texts, autotexts = ax2.pie(
+        pie_counts.values,
+        labels=pie_counts.index,
+        colors=pie_colors,
+        startangle=105,
+        autopct=lambda p: f"{p:.1f}%" if p >= 4 else "",
+        pctdistance=0.78,
+        labeldistance=1.04,
+        wedgeprops={"linewidth": 0.8, "edgecolor": "white"},
+        textprops={"color": "#2A2A2A", "fontsize": 5.5},
     )
-    ax2.set_xlabel("Number of Papers", color="#3A3A3A", labelpad=6)
-    ax2.set_ylabel("")
-    ax2.tick_params(axis="x", colors="#555555", length=0)
-    ax2.tick_params(axis="y", colors="#2A2A2A", length=0, pad=6)
-    for bar in bars:
-        width = bar.get_width()
-        pct = width / bar_total * 100
-        ax2.text(
-            width + max(bar_counts.values) * 0.01,
-            bar.get_y() + bar.get_height() / 2,
-            f"{pct:.1f}%",
-            va="center",
-            ha="left",
-            fontsize=8,
-            color="#4A4A4A",
-        )
-    legend_handles = [
-        mpatches.Patch(color=family_palette["nature"], label="Nature"),
-        mpatches.Patch(color=family_palette["architectural"], label="Architectural"),
-        mpatches.Patch(color=family_palette["urban"], label="Urban"),
-        mpatches.Patch(color=family_palette["ambient"], label="Multisensory/Ambient"),
-        mpatches.Patch(color=family_palette["methods"], label="Methods"),
-    ]
-    ax2.legend(
-        handles=legend_handles,
-        frameon=False,
-        loc="lower right",
+    for wedge, t in zip(wedges, autotexts):
+        r, g, b, _ = wedge.get_facecolor()
+        luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+        t.set_color("white" if luminance < 0.52 else "#3A3A3A")
+        t.set_fontsize(5.5)
+    ax2.set_title("Research Topic Distribution", loc="left", pad=8, color="#1F1F1F")
+    ax2.text(
+        0.5,
+        -0.08,
+        f"N = {bar_total}",
+        transform=ax2.transAxes,
+        ha="center",
+        va="top",
         fontsize=8,
-        labelcolor="#4A4A4A",
+        color="#555555",
     )
     fig2.tight_layout()
     export_figure(fig2, "fig3b_research_topic_distribution")
